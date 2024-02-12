@@ -56,7 +56,7 @@ class ScbBotEnv(gym.Env):
         self.counts = 0
         self.sim.stopSimulation()
         self.state = np.zeros(self.env_params['ob_dim'])
-        time.sleep(0.1)
+        time.sleep(self.env_params['sleep_time'])
         self.sim.setStepping(True)
         self.scb_bot.reset_model()
         self.sim.startSimulation()
@@ -67,6 +67,8 @@ class ScbBotEnv(gym.Env):
         # Set action and update state
         self.scb_bot.set_torques(action)
         self.sim.step()
+        
+        time.sleep(self.env_params['sleep_time'])
         self.scb_bot.update_state()
         self.counts += 1
 
@@ -94,11 +96,11 @@ if __name__ == '__main__':
     env = ScbBotEnv()
     env.reset()
     print("Reset Finished")
-    # for _ in range(500):
-    #     action = env.action_space.sample()
-    #     env.step(action)
-    #     print(env.counts)
-    #     print(action)
+    for _ in range(500):
+        action = env.action_space.sample()
+        env.step(action)
+        print(env.counts)
+        print(env.state)
 
     env.close()
         
