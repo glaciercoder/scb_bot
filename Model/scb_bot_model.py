@@ -14,6 +14,9 @@ class ScbBotModel():
         
         self.joint_torques = np.zeros(3)
         self.target_torques = np.zeros(3)
+        self.joint_vels = np.zeros(3)
+        self.cm_vel = np.zeros(3)
+        self.cm_vel_angular = np.zeros(3)
         self.position = np.zeros(3)
         self.orientation = np.zeros(4)
         # Retrive joints
@@ -26,32 +29,39 @@ class ScbBotModel():
             print(f'Get joint {joint_names[i]}......')
         self.bodyhd = self.sim.getObject('/' + self.params['body_name'])
         print(f'Get Link {self.params["body_name"]}......')
-        self.graphhd = self.sim.getObject('/' + self.params['graph_name'])
-        self._set_graph()
-        print("Set graph.......")
+        # self.graphhd = self.sim.getObject('/' + self.params['graph_name'])
+        # self._set_graph()
+        # print("Set graph.......")
 
     def _get_torques(self):
         for i in range(3):
             self.joint_torques[i] = self.sim.getJointForce(self.jointhds[i])
 
-    def _get_pos(self):
+    def _get_cm_pos(self):
         pose = self.sim.getObjectPose(self.bodyhd)
         self.position = np.asarray(pose[:3])
         self.orientation = np.asarray(pose[3:])
 
+    def _get_joint_vel(self):
+        for i in range(3):
+            self.joint_vels[i] = self.sim.getJointVelocity(self.jointhds[i])
+
+    def _get_cm_vel(self):
+        cm_vel, cm_vel_angular = self.sim.getObjectVelocity(self.bodyhd)
+        self.cm_vel = np.asarray(cm_vel)
+        self.cm_vel_angular = np.asarray(cm_vel_angular)
+
     def update_state(self):
         self._get_torques()
-        self._get_pos()
+        self._get_cm_pos()
+        self._get_cm_vel()
+        self._get_joint_vel()
 
     def set_torques(self, target_torques:np.ndarray):
         np.copyto(self.target_torques, target_torques)
         for i in range(3):
-            self.sim.setJointForce(self.jointhds[i], target_torques[i])
+            self.sim.setJointTargetForce(self.jointhds[i], float(target_torques[i]))
 
-    def reset_model(self):
-        self.sim.setObjectPose(self.bodyhd, [0,0,1,0,0,0,1])
-        for i in range(3):
-            self.sim.setJointForce(self.jointhds[i], 0)
 
     def _set_graph(self):
         objectTorque0 = self.sim.addGraphStream(self.graphhd, 'wheel 0 torque', 'N.m', 1)

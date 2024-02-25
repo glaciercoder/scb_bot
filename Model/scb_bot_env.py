@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 import gymnasium as gym
 from gymnasium.utils import seeding
 from gymnasium import spaces, logger
@@ -25,17 +26,20 @@ class ScbBotEnv(gym.Env):
         self.env_params = params['env_params']
 
         # Set env params
-        self.action_space = spaces.Box(low=np.asarray(self.env_params['ac_low']), 
+        self.action_space = spaces.Box(low= - np.asarray(self.env_params['ac_high']), 
                                        high=np.asarray(self.env_params['ac_high']), 
                                        dtype=np.float32)
         print(f'Action Space:{self.action_space}')
-        self.observation_space = spaces.Box(low=np.asarray(self.env_params['ob_low'], dtype=np.float32), 
+        self.observation_space = spaces.Box(low= - np.asarray(self.env_params['ob_high'], dtype=np.float32), 
                                        high=np.asarray(self.env_params['ob_high'],dtype=np.float32), 
                                        dtype=np.float32)
         print(f'Observation Space:{self.observation_space}')
         self.state = np.zeros(self.env_params['ob_dim'])
         self.seed(self.env_params['seed'])
         self.counts = 0
+        self.target_position = np.asarray(self.env_params['target_pose'][:3])
+        self.target_orientation = np.asarray(self.env_params['target_pose'][3:])
+
 
         # Get coppeliasim remote API
         print("Connecting to Coppeliasim......")
@@ -46,6 +50,7 @@ class ScbBotEnv(gym.Env):
         # Init scb model
         print("Initializing SBC Robot Model......")
         self.scb_bot = ScbBotModel(self.sim, self.model_params)
+
         self.sim.startSimulation()
         
     def seed(self, seed=None):
@@ -58,29 +63,52 @@ class ScbBotEnv(gym.Env):
         self.state = np.zeros(self.env_params['ob_dim'])
         time.sleep(self.env_params['sleep_time'])
         self.sim.setStepping(True)
-        self.scb_bot.reset_model()
         self.sim.startSimulation()
 
         return np.array(self.state, dtype=np.float32), {}
 
     def step(self, action:np.ndarray):
-        # Set action and update state
+        # Update state
+        self.scb_bot.update_state()
+        sim_time = self.sim.getSimulationTime()
+        rel_xyz = self.target_position - self.scb_bot.position
+        cm_R = R.from_quat(self.scb_bot.orientation)
+        rel_R = cm_R.inv() * R.from_quat(self.target_orientation)
+        rel_eul = rel_R.as_euler('xyz')
+        error_xyz = np.linalg.norm(rel_xyz[0:2]) # Only care about xy error
+        error_euler = np.linalg.norm(rel_eul)
+        
+        # Set action 
+        if sim_time < self.env_params['start_time']:
+            action = np.zeros(3)
         self.scb_bot.set_torques(action)
         self.sim.step()
         
-        time.sleep(self.env_params['sleep_time'])
-        self.scb_bot.update_state()
-        self.counts += 1
-
         # Episode done checking
-        # Run a distance beyond the given radius
-        dist = np.sqrt(self.state[0]**2 + self.state[1]**2)
-        done =  (dist >= self.env_params['dist_max'])
+        done = (sim_time >= self.env_params['sim_time_th']) \
+                or ((error_xyz <= self.env_params['error_xyz_lth']) 
+                    and (error_euler <= self.env_params['error_euler_th']) 
+                    and (np.linalg.norm(self.scb_bot.cm_vel_angular) <= self.env_params['error_v_ang_th']) 
+                    and (np.linalg.norm(self.scb_bot.cm_vel) <= self.env_params['error_v_th'])) \
+                or (error_xyz > self.env_params['error_xyz_max']) \
+                or ((sim_time >= self.env_params['sim_time_mid'])  and (error_xyz > self.env_params['error_xyz_hth']))
+        done = bool(done)
 
-        # Get new state and reward
-        self.state = np.concatenate([self.scb_bot.position, self.scb_bot.orientation, self.scb_bot.joint_torques])
-        reward = dist
+        # Get reward
+        reward = 1
 
+        # Sim
+        self.counts += 1
+        for i in range(self.env_params['sim_per_step']):
+            self.sim.step()
+        self.state = np.concatenate([self.scb_bot.joint_vels, 
+                                     self.scb_bot.cm_vel, 
+                                     self.scb_bot.cm_vel_angular, 
+                                     rel_xyz,
+                                     rel_eul,
+                                     np.asarray([sim_time])
+                                    ])
+                    
         return self.state, reward, done, False, {}
 
     def render(self):
@@ -99,8 +127,7 @@ if __name__ == '__main__':
     for _ in range(500):
         action = env.action_space.sample()
         env.step(action)
-        print(env.counts)
-        print(env.state)
+        print(action)
 
     env.close()
         

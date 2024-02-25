@@ -1,15 +1,41 @@
 model_params:
-  joint_names: [wheel0, wheel1, wheel2]
-  body_name: body 
+  joint_names: [Revolute_joint0, Revolute_joint1, Revolute_joint2]
+  body_name: cm 
   graph_name: Graph
 
 env_params:
   seed: 3
   ac_dim: 3
-  ob_dim: 10
-  ac_high: [10.0, 10.0, 10.0]
-  ac_low:  [-10.0, -10.0, -10.0]
-  ob_high: [1e6, 1e6, 1e6, 1, 1, 1, 1e6, 1e6, 1e6]
-  ob_low: [-1e6, -1e6, -1e6, -1, -1, -1, -1e6, -1e6, -1e6]
-  dist_max: 100
+  ob_dim: 16
+  # ac: torques of the three wheels
+  ac_high: [3.0, 3.0, 3.0]
+  # ob: wheel angular velocity
+  #     center of mass angular velocity
+  #     center of mass velocity
+  #     relative distance
+  #     relative angular distance
+  #     sim time
+  ob_high: [24, 24, 24, 
+            6, 6, 6, 
+            1, 1, 1,
+            2, 2, 2,
+            7, 7, 7, 240]
+  # center of mass initial pose
+  target_pose: [0.0, 1.0, 0.64, 0, 0, 0, 1]
+
   sleep_time: 1 # This should be adjust according to the simulation performance
+  start_time: 5 # Time to apply action
+
+  # Threshold for error, done if the error is now in this range
+  error_xyz_max: 3
+  error_xyz_lth: 0.03
+  error_euler_th: 0.1
+  error_v_th: 0.002
+  error_v_ang_th: 0.03
+  sim_time_th: 240
+  sim_time_mid: 60
+  error_xyz_hth: 0.9
+
+  # sim per step
+  sim_per_step: 10 
+  
