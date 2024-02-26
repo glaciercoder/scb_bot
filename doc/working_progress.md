@@ -7,3 +7,4 @@ Observation Space is continuous, 16 dimensions which are velocity of three wheel
 
 ## Troubleshooting
 1. Before running RemoteAPI, all child scripts in coppeliasim must be detattched.
+2. [SAC training hyperparameters](https://github.com/yosider/ml-agents-1/blob/master/docs/Training-SAC.md)

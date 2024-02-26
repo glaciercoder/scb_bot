@@ -14,7 +14,7 @@ from scb_bot_model import ScbBotModel
 class ScbBotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self) -> None:
+    def __init__(self, port=23000) -> None:
         super().__init__()
 
         # Get params
@@ -43,7 +43,7 @@ class ScbBotEnv(gym.Env):
 
         # Get coppeliasim remote API
         print("Connecting to Coppeliasim......")
-        self.client = RemoteAPIClient()
+        self.client = RemoteAPIClient(port=port)
         self.sim = self.client.getObject('sim')
         self.sim.setStepping(True)
 
@@ -85,17 +85,19 @@ class ScbBotEnv(gym.Env):
         self.sim.step()
         
         # Episode done checking
-        done = (sim_time >= self.env_params['sim_time_th']) \
-                or ((error_xyz <= self.env_params['error_xyz_lth']) 
-                    and (error_euler <= self.env_params['error_euler_th']) 
-                    and (np.linalg.norm(self.scb_bot.cm_vel_angular) <= self.env_params['error_v_ang_th']) 
-                    and (np.linalg.norm(self.scb_bot.cm_vel) <= self.env_params['error_v_th'])) \
-                or (error_xyz > self.env_params['error_xyz_max']) \
-                or ((sim_time >= self.env_params['sim_time_mid'])  and (error_xyz > self.env_params['error_xyz_hth']))
+        # done = (sim_time >= self.env_params['sim_time_th']) \
+        #         or ((error_xyz <= self.env_params['error_xyz_lth']) 
+        #             and (error_euler <= self.env_params['error_euler_th']) 
+        #             and (np.linalg.norm(self.scb_bot.cm_vel_angular) <= self.env_params['error_v_ang_th']) 
+        #             and (np.linalg.norm(self.scb_bot.cm_vel) <= self.env_params['error_v_th'])) \
+        #         or (error_xyz > self.env_params['error_xyz_max']) \
+        #         or ((sim_time >= self.env_params['sim_time_mid'])  and (error_xyz > self.env_params['error_xyz_hth']))
+        done = (sim_time >= self.env_params['sim_time_th']) 
         done = bool(done)
 
         # Get reward
-        reward = 1
+        C = 3
+        reward = C - error_xyz
 
         # Sim
         self.counts += 1
@@ -126,8 +128,8 @@ if __name__ == '__main__':
     print("Reset Finished")
     for _ in range(500):
         action = env.action_space.sample()
-        env.step(action)
-        print(action)
+        state, reward, done, _, _ = env.step(action)
+        print(reward)
 
     env.close()
         

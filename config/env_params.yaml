@@ -24,7 +24,7 @@ env_params:
   target_pose: [0.0, 1.0, 0.64, 0, 0, 0, 1]
 
   sleep_time: 1 # This should be adjust according to the simulation performance
-  start_time: 5 # Time to apply action
+  start_time: 3 # Time to apply action
 
   # Threshold for error, done if the error is now in this range
   error_xyz_max: 3
