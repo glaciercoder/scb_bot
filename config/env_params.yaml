@@ -1,6 +1,7 @@
 model_params:
   joint_names: [Revolute_joint0, Revolute_joint1, Revolute_joint2]
-  body_name: cm 
+  cm_name: cm 
+  body_name: lower_hemisphere
   graph_name: Graph
 
 env_params:

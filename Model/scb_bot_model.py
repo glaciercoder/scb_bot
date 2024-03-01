@@ -9,13 +9,17 @@ class ScbBotModel():
         self.sim = sim
         self.params = model_params
         self.jointhds = [None, None, None]
+        self.cmhd = None
         self.bodyhd = None
         self.graphhd = None
+        self.floorhd = None
         
         self.joint_torques = np.zeros(3)
         self.target_torques = np.zeros(3)
         self.joint_vels = np.zeros(3)
+        self.joint_vels_last = np.zeros(3)
         self.cm_vel = np.zeros(3)
+        self.cm_vel_last = np.zeros(3)
         self.cm_vel_angular = np.zeros(3)
         self.position = np.zeros(3)
         self.orientation = np.zeros(4)
@@ -27,8 +31,14 @@ class ScbBotModel():
         for i in range(3):
             self.jointhds[i] = self.sim.getObject('/'+joint_names[i])
             print(f'Get joint {joint_names[i]}......')
+        self.cmhd = self.sim.getObject('/' + self.params['cm_name'])
+        print(f'Get Link {self.params["cm_name"]}......')
         self.bodyhd = self.sim.getObject('/' + self.params['body_name'])
         print(f'Get Link {self.params["body_name"]}......')
+        self.floorhd = self.sim.getObject('/Floor')
+        print(f'Get Floor ......')
+
+
         # self.graphhd = self.sim.getObject('/' + self.params['graph_name'])
         # self._set_graph()
         # print("Set graph.......")
@@ -38,7 +48,7 @@ class ScbBotModel():
             self.joint_torques[i] = self.sim.getJointForce(self.jointhds[i])
 
     def _get_cm_pos(self):
-        pose = self.sim.getObjectPose(self.bodyhd)
+        pose = self.sim.getObjectPose(self.cmhd)
         self.position = np.asarray(pose[:3])
         self.orientation = np.asarray(pose[3:])
 
@@ -47,11 +57,13 @@ class ScbBotModel():
             self.joint_vels[i] = self.sim.getJointVelocity(self.jointhds[i])
 
     def _get_cm_vel(self):
-        cm_vel, cm_vel_angular = self.sim.getObjectVelocity(self.bodyhd)
+        cm_vel, cm_vel_angular = self.sim.getObjectVelocity(self.cmhd)
         self.cm_vel = np.asarray(cm_vel)
         self.cm_vel_angular = np.asarray(cm_vel_angular)
 
     def update_state(self):
+        np.copyto(self.cm_vel_last, self.cm_vel)
+        np.copyto(self.joint_vels_last, self.joint_vels)
         self._get_torques()
         self._get_cm_pos()
         self._get_cm_vel()
