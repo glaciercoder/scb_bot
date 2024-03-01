@@ -16,13 +16,12 @@ model_path = './Model/saved_models'
 env = DummyVecEnv([
     lambda: ScbBotEnv(port=23000),
     lambda: ScbBotEnv(port=24000),
-  #  lambda: ScbBotEnv(port=24000),
-  #  lambda: ScbBotEnv(port=25000),
-  #  lambda: ScbBotEnv(port=26000),
-  #  lambda: ScbBotEnv(port=27000),
-  #  lambda: ScbBotEnv(port=28000),
-  #  lambda: ScbBotEnv(port=29000),
-  #  lambda: ScbBotEnv(port=30000)
+    lambda: ScbBotEnv(port=25000),
+    lambda: ScbBotEnv(port=26000),
+    lambda: ScbBotEnv(port=27000),
+    lambda: ScbBotEnv(port=28000),
+    lambda: ScbBotEnv(port=29000),
+    lambda: ScbBotEnv(port=30000)
 ])
 env = VecMonitor(env, log_path)
 

@@ -61,8 +61,11 @@ class ScbBotEnv(gym.Env):
     def reset(self, seed=None):
         print("Reset simulation")
         self.counts = 0
+        self.leave_ground = False
+        self.scb_bot.reset_model()
         self.sim.stopSimulation()
         self.state = np.zeros(self.env_params['ob_dim'])
+        self.state[10] = self.target_position[1]
         time.sleep(self.env_params['sleep_time'])
         self.sim.setStepping(True)
         self.sim.startSimulation()
@@ -70,6 +73,7 @@ class ScbBotEnv(gym.Env):
         return np.array(self.state, dtype=np.float32), {}
 
     def step(self, action:np.ndarray):
+        #  print(f"action:{action}" )
         # Set action 
         # wait until the robot lands
         sim_time = self.sim.getSimulationTime()
@@ -111,7 +115,7 @@ class ScbBotEnv(gym.Env):
         done = False
         reward = 0.0
         if self.leave_ground:
-            result, dist, coll = self.sim.checkDistance(self.scb_bot.bodyhd, self.scb_bot.floorhd, 0.005)
+            result, dist, coll = self.sim.checkDistance(robot_collection, self.scb_bot.floorhd, 0.005)
             while result==0:
                 for i in range(self.env_params['sim_per_step']):
                     self.sim.step()
@@ -123,7 +127,7 @@ class ScbBotEnv(gym.Env):
                 if (sim_time >= self.env_params['sim_time_th']) or (np.linalg.norm(rel_xyz) > 3) or ((sim_time >= 60)  and (error_horizontal > 0.95)):
                     done = True
                     break
-                result, dist, coll = self.sim.checkDistance(self.scb_bot.bodyhd, self.scb_bot.floorhd, 0.005)
+                result, dist, coll = self.sim.checkDistance(robot_collection, self.scb_bot.floorhd, 0.005)
             if done:
                 reward = -100.0
             else:

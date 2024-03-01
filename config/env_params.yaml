@@ -9,7 +9,7 @@ env_params:
   ac_dim: 3
   ob_dim: 16
   # ac: torques of the three wheels
-  ac_high: [3.0, 3.0, 3.0]
+  ac_high: [1.0, 1.0, 1.0]
   # ob: wheel angular velocity
   #     center of mass angular velocity
   #     center of mass velocity

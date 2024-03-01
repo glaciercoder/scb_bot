@@ -79,6 +79,17 @@ class ScbBotModel():
         objectTorque0 = self.sim.addGraphStream(self.graphhd, 'wheel 0 torque', 'N.m', 1)
         self.sim.setGraphStreamValue(self.graphhd, objectTorque0, self.joint_torques[0])
 
+    def reset_model(self):
+        self.joint_torques = np.zeros(3)
+        self.target_torques = np.zeros(3)
+        self.joint_vels = np.zeros(3)
+        self.joint_vels_last = np.zeros(3)
+        self.cm_vel = np.zeros(3)
+        self.cm_vel_last = np.zeros(3)
+        self.cm_vel_angular = np.zeros(3)
+        self.position = np.zeros(3)
+        self.orientation = np.zeros(4)
+
     
 
     
