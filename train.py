@@ -9,7 +9,7 @@ from stable_baselines3.common.callbacks import CallbackList
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 sys.path.append("./Model")
-from scb_bot_env import ScbBotEnv
+from scb_bot_stages import ScbBotEnv
 
 if __name__ == '__main__':
     log_path = "./data"
@@ -24,7 +24,9 @@ if __name__ == '__main__':
         lambda: ScbBotEnv(port=29000),
         lambda: ScbBotEnv(port=30000),
         lambda: ScbBotEnv(port=31000),
-        lambda: ScbBotEnv(port=32000)
+        lambda: ScbBotEnv(port=32000),
+        lambda: ScbBotEnv(port=33000),
+        lambda: ScbBotEnv(port=34000)
     ])
     env = VecMonitor(env, log_path)
 
@@ -32,12 +34,11 @@ if __name__ == '__main__':
         env, 
         best_model_save_path=model_path, 
         log_path=log_path, 
-        eval_freq=500, deterministic=True, render=False)
+        eval_freq=10000, deterministic=True, render=False)
 
     checkpoint_callback = CheckpointCallback(
       save_freq=50000,
-      save_path=log_path,
-      name_prefix=str(datetime.now().strftime("%Y-%m-%d %H-%M-%S")) + "ckpt",
+      save_path='./checkpoint/',
       save_replay_buffer=True,
       save_vecnormalize=True,
     )

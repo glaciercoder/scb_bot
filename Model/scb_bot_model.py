@@ -13,6 +13,8 @@ class ScbBotModel():
         self.bodyhd = None
         self.graphhd = None
         self.floorhd = None
+        self.robot_collection = self.sim.createCollection(0)
+        self.g = None
         
         self.joint_torques = np.zeros(3)
         self.target_torques = np.zeros(3)
@@ -25,6 +27,7 @@ class ScbBotModel():
         self.orientation = np.zeros(4)
         # Retrive joints
         self._get_handlers()
+        self.sim.addItemToCollection(self.robot_collection, self.sim.handle_tree, self.bodyhd, 0)
         
     def _get_handlers(self):
         joint_names = self.params['joint_names']
@@ -37,6 +40,9 @@ class ScbBotModel():
         print(f'Get Link {self.params["body_name"]}......')
         self.floorhd = self.sim.getObject('/Floor')
         print(f'Get Floor ......')
+        g = self.sim.getArrayParam(self.sim.arrayparam_gravity)
+        self.g = g[2]
+        print(f'Get gravity g = {self.g}')
 
 
         # self.graphhd = self.sim.getObject('/' + self.params['graph_name'])
